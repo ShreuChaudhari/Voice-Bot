@@ -7,7 +7,7 @@ from streamlit_webrtc import webrtc_streamer, WebRtcMode, AudioProcessorBase
 import av
 
 # Configure API Key
-genai.configure(api_key="YOUR_API_KEY")
+genai.configure(api_key="AIzaSyAbb6m2hUULstNAyQ4a_loO-JyuSY49XhQ")
 
 # AI Persona
 persona_context = """
