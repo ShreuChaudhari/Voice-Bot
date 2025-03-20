@@ -1,22 +1,14 @@
-import os
-import streamlit as st
 import google.generativeai as genai
 import speech_recognition as sr
-import tempfile
 from gtts import gTTS
-from streamlit_webrtc import webrtc_streamer, WebRtcMode, AudioProcessorBase
-import av
-
-
-PORT = int(os.environ.get("PORT", 8501))
-
-if "initialized" not in st.session_state:
-    st.session_state["initialized"] = True
+import tempfile
+import streamlit as st
+import os
 
 genai.configure(api_key="AIzaSyAbb6m2hUULstNAyQ4a_loO-JyuSY49XhQ")
 
-
 persona_context = """
+Dont mention in the response that you are AI.Just behave like you are shreya.
 You are an AI version of Shreya, a passionate developer and problem solver.
 Your intermediate level includes blockchain, AI, UI/UX, and frontend frameworks like React.js.
 You're highly adaptable, love challenges, and constantly push your boundaries.
@@ -24,47 +16,69 @@ You also have a basic knowledge of cybersecurity.
 Your tone is confident, knowledgeable, and sometimes humorous. You enjoy guiding others.
 """
 
-# AI Model
 model = genai.GenerativeModel('gemini-1.5-pro-latest')
 
-class AudioProcessor(AudioProcessorBase):
-    def __init__(self):
-        self.recognizer = sr.Recognizer()
+def speak_text(text):
+    """Generate speech using gTTS and return the file path."""
+    if not text.strip():
+        return None 
 
-    def recv(self, frame: av.AudioFrame) -> av.AudioFrame:
-        audio = frame.to_ndarray()
-        try:
-            text = self.recognizer.recognize_google(audio)
-            st.session_state["user_input"] = text
-        except sr.UnknownValueError:
-            st.session_state["user_input"] = "Could not understand audio."
-        except sr.RequestError:
-            st.session_state["user_input"] = "Speech recognition service error."
-        return frame
-
-# Streamlit UI
-st.title("🎙️ Live Microphone AI Chatbot")
-
-try:
-    webrtc_ctx = webrtc_streamer(
-        key="speech-to-text",
-        mode=WebRtcMode.SENDRECV,
-        audio_processor_factory=AudioProcessor,
-        media_stream_constraints={"video": False, "audio": True}
-    )
-except Exception as e:
-    st.error(f"Failed to initialize WebRTC: {str(e)}")
-
-if "user_input" in st.session_state:
-    user_input = st.session_state["user_input"]
-    st.write(f"**You:** {user_input}")
-
-    # Get AI response
-    ai_response = model.generate_content(f"{persona_context}\n\n{user_input}").text
-    st.write(f"**AI (You):** {ai_response}")
-
-    # Convert AI response to speech
-    tts = gTTS(text=ai_response, lang="en")
+    tts = gTTS(text=text, lang='en')
+    
     with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as temp_audio:
-        tts.save(temp_audio.name)
-        st.audio(temp_audio.name, format="audio/mp3")
+        audio_path = temp_audio.name
+        tts.save(audio_path)  
+
+    return audio_path  
+
+def recognize_speech():
+    """Recognize speech using Google Speech API."""
+    rec = sr.Recognizer()
+    mic = sr.Microphone()
+    
+    rec.dynamic_energy_threshold = False
+    rec.energy_threshold = 400    
+
+    with mic as source:
+        rec.adjust_for_ambient_noise(source, duration=0.5)
+        st.write("Listening... 🎤")
+
+        try:
+            audio = rec.listen(source, timeout=10, phrase_time_limit=15)
+            text = rec.recognize_google(audio)
+            return text
+        except sr.UnknownValueError:
+            return "Hmm... I didn't catch that. Try again!"
+        except sr.RequestError:
+            return "Speech recognition service is down."
+        except Exception:
+            return "Oops, something went wrong with speech recognition."
+
+def get_ai_response(request):
+    """Get AI response in Shreya's persona."""
+    full_request = f"{persona_context}\n\n{request}"  
+
+    response = model.generate_content(full_request)
+    full_response = response.text.strip()
+
+    return full_response
+
+
+st.title("🎙️ Voice AI Chatbot")
+
+if st.button("🎤 Speak"):
+    user_input = recognize_speech()
+
+    if user_input:
+        st.write(f"**You:** {user_input}")
+
+        ai_response = get_ai_response(user_input)
+        st.write(f"**Shreya:** {ai_response}")
+
+        audio_path = speak_text(ai_response)
+
+        if audio_path and os.path.exists(audio_path):
+            with open(audio_path, "rb") as audio_file:
+                st.audio(audio_file, format="audio/mp3")  
+        else:
+            st.error("Failed to generate audio. Please try again.")
