@@ -4,3 +4,4 @@ gtts
 speechrecognition
 streamlit-webrtc
 av
+ffmpeg-python
