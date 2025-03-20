@@ -1,10 +1,15 @@
-import google.generativeai as genai
+import os
 import streamlit as st
+import google.generativeai as genai
 import speech_recognition as sr
 import tempfile
 from gtts import gTTS
 from streamlit_webrtc import webrtc_streamer, WebRtcMode, AudioProcessorBase
 import av
+
+# Ensure Streamlit has a session before running WebRTC
+if "initialized" not in st.session_state:
+    st.session_state["initialized"] = True
 
 # Configure API Key
 genai.configure(api_key="AIzaSyAbb6m2hUULstNAyQ4a_loO-JyuSY49XhQ")
@@ -36,15 +41,18 @@ class AudioProcessor(AudioProcessorBase):
             st.session_state["user_input"] = "Speech recognition service error."
         return frame
 
+# Streamlit UI
+st.title("🎙️ Live Microphone AI Chatbot")
 
-st.write("# 🎙️ Live Microphone AI Chatbot")
-
-webrtc_ctx = webrtc_streamer(
-    key="speech-to-text",
-    mode=WebRtcMode.SENDRECV,
-    audio_processor_factory=AudioProcessor,
-    media_stream_constraints={"video": False, "audio": True}
-)
+try:
+    webrtc_ctx = webrtc_streamer(
+        key="speech-to-text",
+        mode=WebRtcMode.SENDRECV,
+        audio_processor_factory=AudioProcessor,
+        media_stream_constraints={"video": False, "audio": True}
+    )
+except Exception as e:
+    st.error(f"Failed to initialize WebRTC: {str(e)}")
 
 if "user_input" in st.session_state:
     user_input = st.session_state["user_input"]
@@ -59,4 +67,3 @@ if "user_input" in st.session_state:
     with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as temp_audio:
         tts.save(temp_audio.name)
         st.audio(temp_audio.name, format="audio/mp3")
-
