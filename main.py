@@ -35,9 +35,12 @@ class AudioProcessor(AudioProcessorBase):
         except sr.RequestError:
             st.session_state["user_input"] = "Speech recognition service error."
         return frame
+PORT = int(os.environ.get("PORT", 8501))  # Default to 8501 if no port is assigned
+st.set_page_config(page_title="Live Mic AI Bot", page_icon="🎤")
 
-# Streamlit UI
-st.title("🎙️ Live Microphone AI Chatbot")
+st.write("# 🎙️ Live Microphone AI Chatbot")
+
+st.write(f"Running on port {PORT} 🚀")
 
 webrtc_ctx = webrtc_streamer(
     key="speech-to-text",
@@ -59,3 +62,4 @@ if "user_input" in st.session_state:
     with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as temp_audio:
         tts.save(temp_audio.name)
         st.audio(temp_audio.name, format="audio/mp3")
+
