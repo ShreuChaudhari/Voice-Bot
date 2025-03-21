@@ -12,7 +12,8 @@ if "initialized" not in st.session_state:
     st.session_state["initialized"] = True
 
 # Configure API Key
-genai.configure(api_key="GOOGLE_API_KEY")
+require('dotenv').config();
+const apiKey = process.env.GOOGLE_API_KEY;
 
 # AI Persona
 persona_context = """
