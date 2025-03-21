@@ -12,7 +12,7 @@ if "initialized" not in st.session_state:
     st.session_state["initialized"] = True
 
 # Configure API Key
-genai.configure(api_key="YOUR_API_KEY")
+genai.configure(api_key="GOOGLE_API_KEY")
 
 # AI Persona
 persona_context = """
