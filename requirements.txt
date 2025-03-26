@@ -1,7 +1,6 @@
-streamlit
+flask
 google-generativeai
 gtts
 speechrecognition
-streamlit-webrtc
 av
 ffmpeg-python
