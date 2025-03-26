@@ -4,3 +4,4 @@ gtts
 speechrecognition
 av
 ffmpeg-python
+gunicorn
